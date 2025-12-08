@@ -3245,7 +3245,7 @@ class PageInbound(BaseWizardPage):
         self.reset_sni_priority()
         super().cleanupPage()
 
-CURRENT_VERSION = "1.1.7"
+CURRENT_VERSION = "1.1.8"
 GITHUB_USER = "yukikras"
 GITHUB_REPO = "vless-wizard"
 

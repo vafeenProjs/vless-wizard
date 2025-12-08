@@ -128,7 +128,7 @@ systemctl daemon-reload
 systemctl enable x-ui
 systemctl start x-ui
 
-SERVER_IP=${SERVER_IP:-$(curl -s --max-time 3 https://api.ipify.org || curl -s --max-time 3 https://4.ident.me)}
+SERVER_IP=${SERVER_IP:-$(curl -s --max-time 3 https://api.ipify.org || curl -s --max-time 3 https://4.ident.me || hostname -I | awk '{print $1}')}
 
 echo -e "\n\033[1;32mПанель управления 3X-UI доступна по следующим данным:"
 echo -e "Адрес панели: http://${SERVER_IP}:${PORT}/${WEBPATH}"
