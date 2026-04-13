@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Create virtual environment
+        run: python -m venv venv
+
+      - name: Activate venv and install dependencies
+        run: |
+          ./venv/Scripts/Activate.ps1
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (Windows)
+        run: |
+          ./venv/Scripts/Activate.ps1
+          pyinstaller --noconfirm --onefile --windowed --add-data "3xinstall.sh;." main.py
+
+      - name: Rename output with tag
+        run: |
+          mv dist/main.exe "dist/vless-wizard-${{ github.ref_name }}-windows.exe"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-executable
+          path: dist/vless-wizard-${{ github.ref_name }}-windows.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Create virtual environment
+        run: python3 -m venv venv
+
+      - name: Activate venv and install dependencies
+        run: |
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (Linux)
+        run: |
+          source venv/bin/activate
+          pyinstaller --noconfirm --onefile --windowed --add-data "3xinstall.sh:." main.py
+
+      - name: Rename output with tag
+        run: |
+          mv dist/main "dist/vless-wizard-${{ github.ref_name }}-linux"
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-executable
+          path: dist/vless-wizard-${{ github.ref_name }}-linux
+
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [build-windows, build-linux]
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-executable
+          path: artifacts/windows
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-executable
+          path: artifacts/linux
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/windows/vless-wizard-${{ github.ref_name }}-windows.exe
+            artifacts/linux/vless-wizard-${{ github.ref_name }}-linux
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
